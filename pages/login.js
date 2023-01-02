@@ -1,19 +1,45 @@
 import Link from 'next/link';
-import React from 'react';
+import React, {useEffect} from 'react';
 import { useForm } from 'react-hook-form';
 import Layout from '../components/Layout';
+import { signIn, useSession } from 'next-auth/react'
+import { getError } from '../utils/error';
+import { toast } from 'react-toastify';
+import { useRouter } from 'next/router';
 
 const Login = () => {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const redirect = router.query
+
   const {
     handleSubmit,
     register,
     formState: { errors },
   } = useForm();
 
-  const submitHandler = ({ email, password }) => {
-    console.log(email, password);
+  const submitHandler = async ({ email, password }) => {
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        email, 
+        password
+      });
+
+      if(result.error) {
+        toast.error(result.error)
+      }
+    } catch (err) {
+      toast.error(getError(err))
+    }
   };
 
+  useEffect(() => {
+    if(session?.user) {
+      router.push('/');
+    }
+  }, [router, session, redirect])
+  
   return (
     <Layout title="Login">
       <form
